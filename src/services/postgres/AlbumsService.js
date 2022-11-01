@@ -2,7 +2,7 @@ const { Pool } = require('pg');
 const { nanoid } = require('nanoid');
 const InvariantError = require('../../exceptions/InvariantError');
 const NotFoundError = require('../../exceptions/NotFoundError');
-const { mapDBToModelAlbums } = require('../../utils');
+const { mapDBToModel } = require('../../utils');
 
 class AlbumsService {
     constructor() {
@@ -11,83 +11,84 @@ class AlbumsService {
 
     async addAlbum({ name, year }) {
         const id = nanoid(16);
-        const createdAt = new Date().toISOString();
-        const updatedAt = createdAt;
-
         const query = {
-            text: 'INSERT INTO albums values($1, $2, $3, $4, $5) RETURNING id',
-            values: [id, name, year, createdAt, updatedAt],
+          text: 'INSERT INTO albums VALUES($1, $2, $3) RETURNING id',
+          values: [id, name, year],
         };
-
-        const result = await this._pool.query(query);
-
-        if (!result.rows[0].id) {
-            throw new InvariantError('Album gagal ditambahkan');
+        const resultAlbum = await this._pool.query(query);
+    
+        if (!resultAlbum.rows[0].id) {
+          throw new InvariantError('Album gagal ditambahkan');
         }
-
-        return result.rows[0].id;
-    }
-
-    // async getAlbums() {
-    //     const query = {
-    //         text: 'SELECT id = $1, name = $2, year = $3 FROM albums',
-    //         values: [ id,name, year],
-    //     };
-
-    //     const result = await this._pool.query(query);
-
-    //     if (!result.rows.length) {
-    //         throw new NotFoundError('Album tidak ditemukan. Silahkan tambahkan album.');
-
-    //     }
-
-    //     return result.rows.map(mapDBToModelAlbums);
-    // }
-
-    async getAlbumById(id) {
+        return resultAlbum.rows[0].id;
+      }
+    
+      async getAlbumById(id) {
         const query = {
-            text: 'SELECT * FROM albums WHERE id = $1',
-            values: [id],
+          text: 'SELECT * FROM albums WHERE id = $1',
+          values: [id],
         };
-
-        const result = await this._pool.query(query);
-
-        if (!result.rows.length){
-            throw new NotFoundError('Album tidak ditemukan');
+        const resultAlbum = await this._pool.query(query);
+        if (!resultAlbum.rows.length) {
+          throw new NotFoundError('Album tidak ditemukan');
         }
-
-        return result.rows.map(mapDBToModelAlbums)[0];
-    }
-
-
-    async editAlbumById(id, { name, year }) {
-        const updatedAt = new Date().toISOString();
-        const query = {
-            text: 'UPDATE albums SET name = $1, year = $2, updated_at = $3 WHERE id = $4 RETURNING id',
-            values: [ name, year, updatedAt, id ],
-
+        const album = resultAlbum.rows[0];
+        const result = {
+          id: album.id,
+          name: album.name,
+          year: album.year,
         };
+    
+        return result;
+      }
 
+      // async getAlbumsById(id) {
+      //   const query = {
+      //     text: 'SELECT * FROM albums WHERE id = $1',
+      //     values: [id],
+      //   };
+      //   const result = await this._pool.query(query);
+    
+      //   if (!result.rows.length) {
+      //     throw new NotFoundError('Albums tidak ditemukan');
+      //   }
+    
+      //   return result.rows.map(mapDBToModel)[0];
+      // }
+
+      // mendapatkan lagu
+      async getSongsInAlbum(id) {
+        const query = {
+          text: 'SELECT id, title, performer FROM songs WHERE "albumId" = $1',
+          values: [id],
+        };
         const result = await this._pool.query(query);
-
+        return result.rows.map(mapDBToModelSong);
+      }
+    
+      async editAlbumById(id, { name, year }) {
+        const query = {
+          text: 'UPDATE albums SET name = $1, year = $2 WHERE id = $3 RETURNING id ',
+          values: [name, year, id],
+        };
+        const resultAlbum = await this._pool.query(query);
+        if (!resultAlbum.rows.length) {
+          throw new NotFoundError('Gagal Memperbarui album');
+        }
+      }
+    
+      async deleteAlbumById(id) {
+        const query = {
+          text: 'DELETE FROM albums WHERE id = $1 RETURNING id',
+          values: [id],
+        };
+        const result = await this._pool.query(query);
+    
         if (!result.rows.length) {
-            throw new NotFoundError('Gagal memperbarui album. Id tidak ditemukan');
+          throw new NotFoundError('Album gagal dihapus,id tidak ditemukan');
         }
-
+      }
     }
-
-    async deleteAlbumById(id) {
-        const query = {
-            text: 'DELETE FROM albums WHERE id = $1 RETURNING id',
-            values: [id],
-        };
-
-        const result = await this._pool.query(query);
-
-        if (!result.rows.length){ 
-            throw new NotFoundError('Album gagal dihapus. Id tidak ditemukan');
-        }
-    }
-}
+    
 
 module.exports = AlbumsService;

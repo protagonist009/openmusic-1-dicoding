@@ -1,38 +1,17 @@
-const mapDBToModelAlbums = ({
-    id,
-    name,
-    year,
-    created_at,
-    updated_at,
-}) => ({
-    id,
-    name,
-    year,
-    createdAt: created_at,
-    updateAt: updated_at,
-})
+/* eslint-disable linebreak-style */
+/* eslint-disable object-curly-newline */
+/* eslint-disable linebreak-style */
+/* eslint-disable camelcase */
+/* eslint-disable linebreak-style */
 
-const mapDBToModelSongs = ({
+const mapDBToModel = ({ id, title, year, performer, genre, duration, album_id }) => ({
     id,
     title,
     year,
-    genre,
     performer,
-    duration,
-    albumId,
-    created_at,
-    updated_at,
-}) => ({
-    id,
-    title,
-    year,
     genre,
-    performer,
     duration,
-    albumId,
-    createdAt: created_at,
-    updateAt: updated_at,
-})
-
-
-module.exports = { mapDBToModelAlbums, mapDBToModelSongs };
+    albumId: album_id,
+  });
+  
+  module.exports = { mapDBToModel };
